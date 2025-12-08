@@ -1,15 +1,15 @@
 
 import express from 'express'
+import userRouter from './routes/userRotes.js'
+import { connectDB } from './config/dbConnect.js'
+import dotenv from 'dotenv'
+dotenv.config()
 
 const app = express()
 
-app.get('/', (request, response) => {
-    response.send('Hello World')
-})
+await connectDB()
 
-app.get('/about', (request, response) => {
-    response.send('Hello, this is about page')
-})
+app.use(userRouter)
 
 app.listen(3000, () => {
     console.log(`Server running on http://localhost:3000`)
