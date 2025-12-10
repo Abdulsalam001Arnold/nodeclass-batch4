@@ -1,5 +1,6 @@
 
 import { userModel } from "../models/userSchema.js"
+import { userValidator } from "../validator/userInputValidator.js"
 
 export const getHome = (req, res) => {
     res.send('Hello world!')
@@ -15,6 +16,29 @@ export const createUser = async(req, res) => {
         const {name, email, password} = req.body
 
         if(name !== "" && email !== "" && password !== "") {
+
+            const {error} = userValidator.validate({
+                name,
+                email,
+                password
+            })
+
+            if(error) {
+                return res.status(400).json({
+                    message: error.details[0].message,
+                    error: true
+                })
+            }
+
+            const existingUser = await userModel.findOne({email})
+
+            if(existingUser) {
+                return res.status(400).json({
+                    message: 'User already exists, please log in.',
+                    data: existingUser
+                })
+            }
+
             const newUser = await userModel.create({
                 name,
                 email,
