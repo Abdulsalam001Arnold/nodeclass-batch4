@@ -4,6 +4,7 @@ import { userValidator } from "../validator/userInputValidator.js"
 import {generateToken} from "../utils/generateToken.js";
 import {loginValidator} from "../validator/loginValidator.js";
 import bcrypt from "bcryptjs";
+import {profileModel} from "../models/profileSchema.js";
 
 export const getHome = (req, res) => {
     res.send('Hello world!')
@@ -16,14 +17,17 @@ export const getAbout = (req, res) => {
 
 export const createUser = async(req, res) => {
     try {
-        const {name, email, password} = req.body
+        const {name, email, password, bio, gender, age} = req.body
 
-        if(name !== "" && email !== "" && password !== "") {
+        if(name !== "" && email !== "" && password !== "" && gender !== "" && age !== "") {
 
             const {error} = userValidator.validate({
                 name,
                 email,
-                password
+                password,
+                bio,
+                gender,
+                age
             })
 
             if(error) {
@@ -42,11 +46,23 @@ export const createUser = async(req, res) => {
                 })
             }
 
+            const profile = await profileModel.create({
+                bio,
+                age,
+                gender,
+                user: null
+            })
+
             const newUser = await userModel.create({
                 name,
                 email,
-                password
+                password,
+                profile: profile._id
             })
+
+            await profileModel.findByIdAndUpdate(profile._id, {user: newUser._id})
+
+            const populatedUser = await userModel.findById(newUser._id).populate("profile")
 
             const token = await generateToken(newUser._id)
 
@@ -59,7 +75,7 @@ export const createUser = async(req, res) => {
 
             return res.status(201).json({
                 message: 'User created successfully!',
-                data: newUser
+                data: populatedUser
             })
         }else{
             return res.status(400).json({
@@ -78,7 +94,6 @@ export const createUser = async(req, res) => {
 }
 
 export const loginUser = async(req, res) => {
-
         try{
             const {email, password} = req.body
             if(email !== "" && password !== "") {
@@ -107,5 +122,18 @@ export const loginUser = async(req, res) => {
         }catch(err){
         if(err instanceof Error) console.error(err.message)
         }
+}
 
+export const getUsers = async(req, res) => {
+    try{
+        const users = await userModel.find()
+
+        if(!users) return res.status(404).json({message: "No users found!"})
+
+        return res.status(200).json({message: "Users fetched successfully!", data: users})
+    }catch(err){
+        if(err instanceof Error) {
+            return res.status(500).json({message: err.message})
+        }
+    }
 }
