@@ -111,6 +111,15 @@ export const loginUser = async(req, res) => {
                         message: "Login successful!",
                         data: userExists
                     })
+
+                    const token = await generateToken(userExists._id)
+
+                    res.cookie('genToken', token, {
+                        httpOnly: true,
+                        secure: process.env.NODE_ENV === 'production',
+                        sameSite: 'strict',
+                        maxAge: 1000 * 60 * 60 * 24 * 7
+                    })
                 }else{
                     return res.status(400).json({message: "Invalid credentials!"})
                 }
@@ -160,4 +169,25 @@ export const deleteUser = async(req, res) => {
         message: "User deleted successfully!",
         data: deletedUser
     })
+}
+
+export const logOut = async(req, res) => {
+    try{
+        res.clearCookie('genToken', {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict'
+        })
+
+        res.status(200).json({message: "Logged out successfully!"})
+
+    }catch(err){
+    if(err instanceof Error) {
+        console.error(err.message)
+        res.status(err.code || 500).json({
+            message: err.message
+        })
+        throw new Error(err.message)
+    }
+    }
 }
