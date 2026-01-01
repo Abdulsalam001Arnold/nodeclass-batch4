@@ -107,10 +107,6 @@ export const loginUser = async(req, res) => {
                 const comparePassword = await bcrypt.compare(password, userExists.password, )
 
                 if(comparePassword) {
-                    return res.status(200).json({
-                        message: "Login successful!",
-                        data: userExists
-                    })
 
                     const token = await generateToken(userExists._id)
 
@@ -119,6 +115,11 @@ export const loginUser = async(req, res) => {
                         secure: process.env.NODE_ENV === 'production',
                         sameSite: 'strict',
                         maxAge: 1000 * 60 * 60 * 24 * 7
+                    })
+
+                    return res.status(200).json({
+                        message: "Login successful!",
+                        data: userExists
                     })
                 }else{
                     return res.status(400).json({message: "Invalid credentials!"})
@@ -191,3 +192,5 @@ export const logOut = async(req, res) => {
     }
     }
 }
+
+
